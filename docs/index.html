@@ -3,211 +3,194 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Diario di Lettura COPERTINE</title>
+<title>Diario di Lettura Cloud - Moduli</title>
 <style>
 body{font-family:Arial,sans-serif;margin:0;background:#1e1e2f;color:#fff;}
-h1,h2{text-align:center;margin:10px 0;}
-.container{max-width:1000px;margin:10px auto;background:#2c2c3e;padding:15px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.4);} 
-input,select,textarea{width:100%;padding:10px;margin:6px 0;border-radius:6px;border:none;box-sizing:border-box;font-size:1rem;}
-button{padding:8px 12px;border:none;border-radius:6px;cursor:pointer;margin:5px 5px 5px 0;font-size:1rem;}
+.container{max-width:1000px;margin:10px auto;background:#2c2c3e;padding:15px;border-radius:12px;}
+input,select,textarea,button{width:100%;padding:10px;margin:6px 0;border-radius:6px;border:none;box-sizing:border-box;}
+button{cursor:pointer;}
 .primary{background:#4CAF50;color:white;}
 .secondary{background:#3498db;color:white;}
 .danger{background:#e74c3c;color:white;}
 .hidden{display:none;}
-.book-item{display:flex;align-items:center;padding:10px;border-bottom:1px solid #444;cursor:pointer;flex-wrap:wrap;}
-.book-item img{max-width:60px;margin-right:10px;border-radius:4px;}
-.book-item:hover{background:#3a3a55;}
+.book-item{padding:10px;border-bottom:1px solid #444;cursor:pointer;}
 .book-detail{overflow:hidden;max-height:0;transition:max-height 0.4s ease;background:#3a3a55;border-radius:8px;padding:0 10px;}
 .book-detail.open{padding:10px;max-height:2000px;}
-.cover{max-width:100%;margin-top:10px;border-radius:6px;box-shadow:0 4px 10px rgba(0,0,0,0.4);}
-.description{margin-top:5px;font-style:italic;color:#ddd;}
-.sub-book-item{margin-left:20px;cursor:pointer;}
-.progress-bar{background:#555;border-radius:8px;overflow:hidden;margin:5px 0;}
-.progress{background:#4CAF50;height:20px;width:0%;color:#000;text-align:center;line-height:20px;font-weight:bold;}
-@media(max-width:600px){.book-item{flex-direction:column;align-items:flex-start;}.sub-book-item{margin-left:10px;font-size:0.95rem;}button,input,select,textarea{font-size:0.95rem;}}
+.cover{max-width:100%;margin-top:10px;}
 </style>
 </head>
 <body>
-<h1>📚 Diario di Lettura COPERTINE</h1>
 <div class="container">
-
+<h1>📚 Diario di Lettura Cloud</h1>
 <div id="authSection">
-<h2>Accesso / Registrazione</h2>
-<input type="text" id="username" placeholder="Username">
+<h2>Login / Registrazione</h2>
+<input type="email" id="email" placeholder="Email">
 <input type="password" id="password" placeholder="Password">
 <button class="primary" onclick="login()">Accedi</button>
 <button class="secondary" onclick="register()">Registrati</button>
 </div>
-
 <div id="homeSection" class="hidden">
-<h2>Home</h2>
-<p>Benvenuto <strong id="displayUser"></strong></p>
-<div>
-<label for="yearGoal">Obiettivo libri per anno:</label>
-<input type="number" id="yearGoal" min="1" value="10" onchange="mostraStatsHome()">
-<div class="progress-bar"><div id="goalProgress" class="progress">0%</div></div>
-</div>
-<div id="statsHome"></div>
-<div class="nav-buttons">
+<h2>Benvenuto <span id="displayUser"></span></h2>
 <button class="primary" onclick="vaiALista()">📖 Elenco Libri Personali</button>
 <button class="secondary" onclick="vaiAAggiungi()">➕ Aggiungi Libro</button>
 <button class="secondary" onclick="vaiAAllUsers()">📚 Elenco Libri di Tutti</button>
 <button class="danger" onclick="logout()">Logout</button>
 </div>
-</div>
-
 <div id="listaSection" class="hidden">
 <h2>Elenco Libri Personali</h2>
-<div class="sort-buttons">
-<button onclick="impostaVista('titolo')">Vista per Titolo</button>
-<button onclick="impostaVista('autore')">Vista per Autore</button>
-<input type="text" id="ricerca" placeholder="🔎 Cerca..." oninput="caricaLibri()">
+<div id="listaLibri"></div>
 <button onclick="tornaHome()">⬅ Torna Home</button>
 </div>
-<div id="listaLibri"></div>
-</div>
-
 <div id="aggiungiSection" class="hidden">
-<h2 id="formTitle">Aggiungi Libro</h2>
-<form id="bookForm">
+<h2>Aggiungi / Modifica Libro</h2>
 <input type="hidden" id="editId">
-<input type="text" id="titolo" placeholder="Titolo" required>
-<input type="text" id="autore" placeholder="Autore" required>
-<input type="date" id="dataInizio" required>
-<input type="date" id="dataFine" required>
-<select id="valutazione" required>
-<option value="">Valutazione</option>
-<option value="1">⭐</option><option value="2">⭐⭐</option><option value="3">⭐⭐⭐</option><option value="4">⭐⭐⭐⭐</option><option value="5">⭐⭐⭐⭐⭐</option>
+<input type="text" id="titolo" placeholder="Titolo">
+<input type="text" id="autore" placeholder="Autore">
+<input type="date" id="dataInizio">
+<input type="date" id="dataFine">
+<select id="valutazione">
+<option value="1">⭐</option>
+<option value="2">⭐⭐</option>
+<option value="3">⭐⭐⭐</option>
+<option value="4">⭐⭐⭐⭐</option>
+<option value="5">⭐⭐⭐⭐⭐</option>
 </select>
-<textarea id="recensione" rows="3" placeholder="Recensione"></textarea>
-<div id="copertineScelte"></div>
-<button type="submit" class="primary">Salva</button>
-<button type="button" onclick="tornaHome()">Annulla</button>
-</form>
+<textarea id="recensione" placeholder="Recensione"></textarea>
+<input type="text" id="copertina" placeholder="URL Copertina (opzionale)">
+<button class="primary" onclick="aggiungiOAggiornaLibro()">Salva</button>
+<button onclick="tornaHome()">Annulla</button>
 </div>
-
 <div id="allUsersSection" class="hidden">
 <h2>Elenco Libri di Tutti</h2>
 <div id="usersBooksList"></div>
 <button onclick="tornaHome()">⬅ Torna Home</button>
 </div>
 
-<script>
-let currentUser=null,vistaCorrente='titolo',dettaglioAperto=null,copertinaSelezionata='';
-function hashPassword(p){return btoa(p);} 
-window.onload=function(){const saved=localStorage.getItem('currentUser');if(saved){currentUser=saved;mostraHome();}}
-function register(){let u=JSON.parse(localStorage.getItem('users'))||{};if(u[username.value])return alert('Utente esistente');u[username.value]={password:hashPassword(password.value),books:[]};localStorage.setItem('users',JSON.stringify(u));alert('Registrazione completata');}
-function login(){let u=JSON.parse(localStorage.getItem('users'))||{};if(!u[username.value]||u[username.value].password!==hashPassword(password.value))return alert('Credenziali errate');currentUser=username.value;localStorage.setItem('currentUser',currentUser);mostraHome();}
-function logout(){localStorage.removeItem('currentUser');location.reload();}
-function mostraHome(){authSection.classList.add('hidden');homeSection.classList.remove('hidden');listaSection.classList.add('hidden');aggiungiSection.classList.add('hidden');allUsersSection.classList.add('hidden');displayUser.innerText=currentUser;mostraStatsHome();}
-function tornaHome(){mostraHome();}
-function vaiALista(){homeSection.classList.add('hidden');listaSection.classList.remove('hidden');caricaLibri();}
-function vaiAAggiungi(){formTitle.innerText='Aggiungi Libro';bookForm.reset();editId.value='';copertinaSelezionata='';copertineScelte.innerHTML='';homeSection.classList.add('hidden');aggiungiSection.classList.remove('hidden');}
-function vaiAAllUsers(){homeSection.classList.add('hidden');allUsersSection.classList.remove('hidden');caricaAllBooksTutti();}
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-bookForm.titolo.addEventListener('input',showCopertine);
-bookForm.autore.addEventListener('input',showCopertine);
-async function showCopertine(){
-  let t=titolo.value.trim(); let a=autore.value.trim();
-  if(t && a){
-    let query=encodeURIComponent(t+" "+a);
-    let res=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}`);
-    let data=await res.json();
-    copertineScelte.innerHTML='';
-    if(data.items){
-      data.items.forEach(item=>{
-        let thumb=item.volumeInfo.imageLinks?.thumbnail||'';
-        if(thumb){
-          let img=document.createElement('img'); img.src=thumb; img.className='cover'; img.style.cursor='pointer';
-          img.title=item.volumeInfo.description||'';
-          img.onclick=()=>copertinaSelezionata=thumb;
-          copertineScelte.appendChild(img);
-        }
-      });
-    }
-  }
+const firebaseConfig = {
+  apiKey: "AIzaSyAgObxcbvQfmbDrTkD8c1qE-iyxIwwDDmM",
+  authDomain: "libreria-24a25.firebaseapp.com",
+  projectId: "libreria-24a25",
+  storageBucket: "libreria-24a25.firebasestorage.app",
+  messagingSenderId: "176468553745",
+  appId: "1:176468553745:web:e22ee006840027fd2e41b0",
+  measurementId: "G-15PLYMT6SS"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+let currentUser = null;
+
+async function register(){
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    currentUser = cred.user;
+    mostraHome();
+  } catch(err){ alert(err.message); }
 }
 
-bookForm.addEventListener('submit',async function(e){
-  e.preventDefault();
-  let u=JSON.parse(localStorage.getItem('users'))||{};
-  let b=u[currentUser].books;
-  let copertina=copertinaSelezionata || '';
-  let descrizione='';
-  if(copertina){
-    let query=encodeURIComponent(titolo.value+" "+autore.value);
-    let res=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}`);
-    let data=await res.json();
-    let sel=data.items?.find(item=>item.volumeInfo.imageLinks?.thumbnail===copertina);
-    if(sel) descrizione=sel.volumeInfo.description||'';
-  }
-  b.push({titolo:titolo.value,autore:autore.value,copertina,descrizione,dataInizio:dataInizio.value,dataFine:dataFine.value,valutazione:valutazione.value,recensione:recensione.value,id:Date.now()});
-  u[currentUser].books=b;
-  localStorage.setItem('users',JSON.stringify(u));
+async function login(){
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    currentUser = cred.user;
+    mostraHome();
+  } catch(err){ alert(err.message); }
+}
+
+async function logout(){
+  await signOut(auth);
+  currentUser=null;
+  location.reload();
+}
+
+function mostraHome(){
+  document.getElementById('authSection').classList.add('hidden');
+  document.getElementById('homeSection').classList.remove('hidden');
+  document.getElementById('displayUser').innerText=currentUser.email;
+}
+
+function vaiALista(){
+  document.getElementById('homeSection').classList.add('hidden');
+  document.getElementById('listaSection').classList.remove('hidden');
+  caricaLibri();
+}
+
+function vaiAAggiungi(){
+  document.getElementById('homeSection').classList.add('hidden');
+  document.getElementById('aggiungiSection').classList.remove('hidden');
+  document.getElementById('editId').value='';
+}
+
+function vaiAAllUsers(){
+  document.getElementById('homeSection').classList.add('hidden');
+  document.getElementById('allUsersSection').classList.remove('hidden');
+  caricaAllBooksTutti();
+}
+
+function tornaHome(){
+  document.getElementById('listaSection').classList.add('hidden');
+  document.getElementById('aggiungiSection').classList.add('hidden');
+  document.getElementById('allUsersSection').classList.add('hidden');
   mostraHome();
-});
-
-function mostraStatsHome(){
-  let books=getBooks(currentUser);
-  let stats={};
-  books.forEach(b=>{ let anno=b.dataInizio.split('-')[0]; stats[anno]=(stats[anno]||0)+1; });
-  let container=document.getElementById('statsHome');
-  container.innerHTML='';
-  Object.keys(stats).sort().forEach(anno=>{
-    let div=document.createElement('div'); div.className='stats-year'; div.innerHTML=`Anno ${anno}: ${stats[anno]} libri letti`; container.appendChild(div); });
-  let goal=parseInt(document.getElementById('yearGoal').value)||10;
-  let currentYear=new Date().getFullYear();
-  let countThisYear=books.filter(b=>b.dataInizio.startsWith(currentYear.toString())).length;
-  let perc=Math.min(100,Math.round((countThisYear/goal)*100));
-  let progressBar=document.getElementById('goalProgress');
-  progressBar.style.width=perc+'%';
-  progressBar.innerText=perc+'%';
 }
 
-function getBooks(user=null){
-  let u=JSON.parse(localStorage.getItem('users'))||{};
-  if(user) return u[user]?.books||[];
-  return Object.values(u).flatMap(x=>x.books);
+async function aggiungiOAggiornaLibro(){
+  const id = document.getElementById('editId').value || Date.now().toString();
+  const libro = {
+    titolo: document.getElementById('titolo').value,
+    autore: document.getElementById('autore').value,
+    dataInizio: document.getElementById('dataInizio').value,
+    dataFine: document.getElementById('dataFine').value,
+    valutazione: document.getElementById('valutazione').value,
+    recensione: document.getElementById('recensione').value,
+    copertina: document.getElementById('copertina').value || '',
+    id: id
+  };
+  await setDoc(doc(db, 'users', currentUser.uid, 'books', id), libro);
+  alert('Libro salvato'); tornaHome();
 }
 
-function impostaVista(v){ vistaCorrente=v; caricaLibri(); }
+async function caricaLibri(){
+  const lista = document.getElementById('listaLibri'); lista.innerHTML='';
+  const snapshot = await getDocs(collection(db, 'users', currentUser.uid, 'books'));
+  snapshot.forEach(docSnap=>{
+    const libro = docSnap.data();
+    const div = document.createElement('div'); div.className='book-item';
+    div.innerText = `${libro.titolo} - ${libro.autore}`;
+    const detail = document.createElement('div'); detail.className='book-detail';
+    detail.innerHTML = `<p>${libro.recensione}</p><p>Valutazione: ${'⭐'.repeat(libro.valutazione)}</p><p>Periodo: ${libro.dataInizio} - ${libro.dataFine}</p>${libro.copertina?`<img src='${libro.copertina}' class='cover'>`:''}<br><button class='danger' onclick='eliminaLibro("${libro.id}")'>Elimina</button>`;
+    div.onclick=()=>{detail.classList.toggle('open');};
+    lista.appendChild(div); lista.appendChild(detail);
+  });
+}
 
-function caricaLibri(){
-  let lista=document.getElementById('listaLibri'); lista.innerHTML='';
-  let books=getBooks(currentUser);
-  let ricerca=document.getElementById('ricerca').value.toLowerCase();
-  books=books.filter(b=>b.titolo.toLowerCase().includes(ricerca)||b.autore.toLowerCase().includes(ricerca));
-  if(vistaCorrente==='titolo'){
-    books.sort((a,b)=>a.titolo.localeCompare(b.titolo));
-    books.forEach(libro=>{ aggiungiBookItem(lista,libro,true); });
-  } else {
-    let autori={}; books.forEach(b=>{ if(!autori[b.autore]) autori[b.autore]=[]; autori[b.autore].push(b); });
-    Object.keys(autori).sort().forEach(autore=>{
-      let header=document.createElement('div'); header.className='book-item'; header.innerText=autore;
-      let subList=document.createElement('div'); subList.className='hidden';
-      autori[autore].sort((a,b)=>a.titolo.localeCompare(b.titolo)).forEach(libro=>{ aggiungiBookItem(subList,libro,true); });
-      header.onclick=()=>subList.classList.toggle('hidden'); lista.appendChild(header); lista.appendChild(subList);
+async function eliminaLibro(id){
+  if(!confirm('Vuoi eliminare questo libro?')) return;
+  await deleteDoc(doc(db, 'users', currentUser.uid, 'books', id));
+  caricaLibri();
+}
+
+async function caricaAllBooksTutti(){
+  const container = document.getElementById('usersBooksList'); container.innerHTML='';
+  const usersSnapshot = await getDocs(collection(db, 'users'));
+  for(const userDoc of usersSnapshot.docs){
+    const booksSnap = await getDocs(collection(db, 'users', userDoc.id, 'books'));
+    booksSnap.forEach(bookDoc=>{
+      const libro = bookDoc.data();
+      const div = document.createElement('div'); div.className='book-item';
+      div.innerText = `${libro.autore} - ${libro.titolo}`;
+      container.appendChild(div);
     });
   }
-}
-
-function caricaAllBooksTutti(){
-  let container=document.getElementById('usersBooksList'); container.innerHTML='';
-  let allBooks=getBooks(); allBooks.sort((a,b)=>a.autore.localeCompare(b.autore));
-  allBooks.forEach(libro=>{ aggiungiBookItem(container,libro,false); });
-}
-
-function aggiungiBookItem(container,libro,mostraCopertina){
-  let item=document.createElement('div'); item.className='book-item';
-  item.innerText=mostraCopertina?`${libro.titolo} - ${libro.autore}`:`${libro.autore} - ${libro.titolo}`;
-  let detail=document.createElement('div'); detail.className='book-detail';
-  let copertinaHTML=mostraCopertina&&libro.copertina?`<img src='${libro.copertina}' class='cover'>`:'',
-      valutazioneHTML=`<p>Valutazione: ${'⭐'.repeat(libro.valutazione)}</p>`,
-      periodoHTML=`<p>Periodo: ${libro.dataInizio} - ${libro.dataFine}</p>`,
-      descrizioneHTML=`<p>${libro.descrizione||libro.recensione||'Nessuna descrizione'}</p>`;
-  detail.innerHTML=copertinaHTML+descrizioneHTML+valutazioneHTML+periodoHTML;
-  item.onclick=function(){ if(dettaglioAperto&&dettaglioAperto!==detail)dettaglioAperto.classList.remove('open'); detail.classList.toggle('open'); dettaglioAperto=detail.classList.contains('open')?detail:null; };
-  container.appendChild(item); container.appendChild(detail);
 }
 </script>
 </body>
