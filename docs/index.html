@@ -118,30 +118,10 @@ function mostraHome(){
   document.getElementById('displayUser').innerText=currentUser.email;
 }
 
-function vaiALista(){
-  document.getElementById('homeSection').classList.add('hidden');
-  document.getElementById('listaSection').classList.remove('hidden');
-  caricaLibri();
-}
-
-function vaiAAggiungi(){
-  document.getElementById('homeSection').classList.add('hidden');
-  document.getElementById('aggiungiSection').classList.remove('hidden');
-  document.getElementById('editId').value='';
-}
-
-function vaiAAllUsers(){
-  document.getElementById('homeSection').classList.add('hidden');
-  document.getElementById('allUsersSection').classList.remove('hidden');
-  caricaAllBooksTutti();
-}
-
-function tornaHome(){
-  document.getElementById('listaSection').classList.add('hidden');
-  document.getElementById('aggiungiSection').classList.add('hidden');
-  document.getElementById('allUsersSection').classList.add('hidden');
-  mostraHome();
-}
+function vaiALista(){ document.getElementById('homeSection').classList.add('hidden'); document.getElementById('listaSection').classList.remove('hidden'); caricaLibri(); }
+function vaiAAggiungi(){ document.getElementById('homeSection').classList.add('hidden'); document.getElementById('aggiungiSection').classList.remove('hidden'); document.getElementById('editId').value=''; }
+function vaiAAllUsers(){ document.getElementById('homeSection').classList.add('hidden'); document.getElementById('allUsersSection').classList.remove('hidden'); caricaAllBooksTutti(); }
+function tornaHome(){ document.getElementById('listaSection').classList.add('hidden'); document.getElementById('aggiungiSection').classList.add('hidden'); document.getElementById('allUsersSection').classList.add('hidden'); mostraHome(); }
 
 async function aggiungiOAggiornaLibro(){
   const id = document.getElementById('editId').value || Date.now().toString();
@@ -192,6 +172,17 @@ async function caricaAllBooksTutti(){
     });
   }
 }
+
+// Esporre le funzioni al contesto globale per i pulsanti HTML
+window.login = login;
+window.register = register;
+window.logout = logout;
+window.aggiungiOAggiornaLibro = aggiungiOAggiornaLibro;
+window.eliminaLibro = eliminaLibro;
+window.vaiALista = vaiALista;
+window.vaiAAggiungi = vaiAAggiungi;
+window.vaiAAllUsers = vaiAAllUsers;
+window.tornaHome = tornaHome;
 </script>
 </body>
 </html>
