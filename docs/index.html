@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diario di Lettura COPERTINE - Libri Personali</title>
+<style>
+body{font-family:Arial;margin:0;background:#1e1e2f;color:#fff;}
+h1,h2{text-align:center;}
+.container{max-width:1000px;margin:20px auto;background:#2c2c3e;padding:20px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.4);} 
+input,select,textarea{width:100%;padding:8px;margin:6px 0;border-radius:6px;border:none;box-sizing:border-box;}
+button{padding:6px 12px;border:none;border-radius:6px;cursor:pointer;margin:5px 5px 5px 0;}
+.primary{background:#4CAF50;color:white;}
+.secondary{background:#3498db;color:white;}
+.danger{background:#e74c3c;color:white;}
+.hidden{display:none;}
+.book-item{display:flex;align-items:center;padding:10px;border-bottom:1px solid #444;cursor:pointer;}
+.book-item img{max-width:60px;margin-right:10px;border-radius:4px;}
+.book-item:hover{background:#3a3a55;}
+.book-detail{overflow:hidden;max-height:0;transition:max-height 0.4s ease;background:#3a3a55;border-radius:8px;padding:0 10px;}
+.book-detail.open{padding:10px;max-height:2000px;}
+.cover{max-width:140px;margin-top:10px;border-radius:6px;box-shadow:0 4px 10px rgba(0,0,0,0.4);}
+.description{margin-top:5px;font-style:italic;color:#ddd;}
+.sub-book-item{margin-left:20px;cursor:pointer;}
+</style>
+</head>
+<body>
+<h1>📚 Diario di Lettura COPERTINE</h1>
+<div class="container">
+
+<div id="authSection">
+<h2>Accesso / Registrazione</h2>
+<input type="text" id="username" placeholder="Username">
+<input type="password" id="password" placeholder="Password">
+<button class="primary" onclick="login()">Accedi</button>
+<button class="secondary" onclick="register()">Registrati</button>
+</div>
+
+<div id="homeSection" class="hidden">
+<h2>Home</h2>
+<p>Benvenuto <strong id="displayUser"></strong></p>
+<div id="statsHome"></div>
+<div class="nav-buttons">
+<button class="primary" onclick="vaiALista()">📖 Elenco Libri Personali</button>
+<button class="secondary" onclick="vaiAAggiungi()">➕ Aggiungi Libro</button>
+<button class="secondary" onclick="vaiAAllUsers()">📚 Elenco Libri di Tutti</button>
+<button class="danger" onclick="logout()">Logout</button>
+</div>
+</div>
+
+<div id="listaSection" class="hidden">
+<h2>Elenco Libri</h2>
+<div class="sort-buttons">
+<button onclick="impostaVista('titolo')">Vista per Titolo</button>
+<button onclick="impostaVista('autore')">Vista per Autore</button>
+<input type="text" id="ricerca" placeholder="🔎 Cerca..." oninput="caricaLibri()">
+<button onclick="tornaHome()">⬅ Torna Home</button>
+</div>
+<div id="listaLibri"></div>
+</div>
+
+<div id="aggiungiSection" class="hidden">
+<h2 id="formTitle">Aggiungi Libro</h2>
+<form id="bookForm">
+<input type="hidden" id="editId">
+<input type="text" id="titolo" placeholder="Titolo" required>
+<input type="text" id="autore" placeholder="Autore" required>
+<input type="date" id="dataInizio" required>
+<input type="date" id="dataFine" required>
+<select id="valutazione" required>
+<option value="">Valutazione</option>
+<option value="1">⭐</option><option value="2">⭐⭐</option><option value="3">⭐⭐⭐</option><option value="4">⭐⭐⭐⭐</option><option value="5">⭐⭐⭐⭐⭐</option>
+</select>
+<textarea id="recensione" rows="3" placeholder="Recensione"></textarea>
+<div id="copertineScelte"></div>
+<button type="submit" class="primary">Salva</button>
+<button type="button" onclick="tornaHome()">Annulla</button>
+</form>
+</div>
+
+<div id="allUsersSection" class="hidden">
+<h2>Elenco Libri di Tutti</h2>
+<div id="usersBooksList"></div>
+<button onclick="tornaHome()">⬅ Torna Home</button>
+</div>
+
+<script>
+let currentUser=null,vistaCorrente='titolo',dettaglioAperto=null,copertinaSelezionata='';
+function hashPassword(p){return btoa(p);} 
+window.onload=function(){const saved=localStorage.getItem('currentUser');if(saved){currentUser=saved;mostraHome();}}
+function register(){let u=JSON.parse(localStorage.getItem('users'))||{};if(u[username.value])return alert('Utente esistente');u[username.value]={password:hashPassword(password.value),books:[]};localStorage.setItem('users',JSON.stringify(u));alert('Registrazione completata');}
+function login(){let u=JSON.parse(localStorage.getItem('users'))||{};if(!u[username.value]||u[username.value].password!==hashPassword(password.value))return alert('Credenziali errate');currentUser=username.value;localStorage.setItem('currentUser',currentUser);mostraHome();}
+function logout(){localStorage.removeItem('currentUser');location.reload();}
+function mostraHome(){authSection.classList.add('hidden');homeSection.classList.remove('hidden');listaSection.classList.add('hidden');aggiungiSection.classList.add('hidden');allUsersSection.classList.add('hidden');displayUser.innerText=currentUser;mostraStatsHome();}
+function tornaHome(){mostraHome();}
+function vaiALista(){homeSection.classList.add('hidden');listaSection.classList.remove('hidden');caricaLibri();}
+function vaiAAggiungi(){formTitle.innerText='Aggiungi Libro';bookForm.reset();editId.value='';copertinaSelezionata='';copertineScelte.innerHTML='';homeSection.classList.add('hidden');aggiungiSection.classList.remove('hidden');}
+function vaiAAllUsers(){homeSection.classList.add('hidden');allUsersSection.classList.remove('hidden');caricaAllBooksTutti();}
+
+bookForm.titolo.addEventListener('input',showCopertine);
+bookForm.autore.addEventListener('input',showCopertine);
+async function showCopertine(){
+  let t=titolo.value.trim(); let a=autore.value.trim();
+  if(t && a){
+    let query=encodeURIComponent(t+" "+a);
+    let res=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}`);
+    let data=await res.json();
+    copertineScelte.innerHTML='';
+    if(data.items){
+      data.items.forEach(item=>{
+        let thumb=item.volumeInfo.imageLinks?.thumbnail||'';
+        if(thumb){
+          let img=document.createElement('img'); img.src=thumb; img.className='cover'; img.style.cursor='pointer';
+          img.title=item.volumeInfo.description||'';
+          img.onclick=()=>copertinaSelezionata=thumb;
+          copertineScelte.appendChild(img);
+        }
+      });
+    }
+  }
+}
+
+bookForm.addEventListener('submit',async function(e){
+  e.preventDefault();
+  let u=JSON.parse(localStorage.getItem('users'))||{};
+  let b=u[currentUser].books;
+  let copertina=copertinaSelezionata || '';
+  let descrizione='';
+  if(copertina){
+    let query=encodeURIComponent(titolo.value+" "+autore.value);
+    let res=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}`);
+    let data=await res.json();
+    let sel=data.items?.find(item=>item.volumeInfo.imageLinks?.thumbnail===copertina);
+    if(sel) descrizione=sel.volumeInfo.description||'';
+  }
+  b.push({titolo:titolo.value,autore:autore.value,copertina,descrizione,dataInizio:dataInizio.value,dataFine:dataFine.value,valutazione:valutazione.value,recensione:recensione.value,id:Date.now()});
+  u[currentUser].books=b;
+  localStorage.setItem('users',JSON.stringify(u));
+  mostraHome();
+});
+
+function mostraStatsHome(){
+  let books=getBooks(currentUser);
+  let stats={};
+  books.forEach(b=>{ let anno=b.dataInizio.split('-')[0]; stats[anno]=(stats[anno]||0)+1; });
+  let container=document.getElementById('statsHome');
+  container.innerHTML='';
+  Object.keys(stats).sort().forEach(anno=>{ let div=document.createElement('div'); div.className='stats-year'; div.innerHTML=`Anno ${anno}: ${stats[anno]} libri letti`; container.appendChild(div); });
+}
+
+function getBooks(user=null){
+  let u=JSON.parse(localStorage.getItem('users'))||{};
+  if(user) return u[user]?.books||[];
+  return Object.values(u).flatMap(x=>x.books);
+}
+
+function caricaLibri(){
+  let lista=document.getElementById('listaLibri');
+  lista.innerHTML='';
+  let books=getBooks(currentUser);
+  let ricerca=document.getElementById('ricerca').value.toLowerCase();
+  books=books.filter(b=>b.titolo.toLowerCase().includes(ricerca)||b.autore.toLowerCase().includes(ricerca));
+  if(vistaCorrente==='titolo'){
+    books.sort((a,b)=>a.titolo.localeCompare(b.titolo));
+    books.forEach(libro=>{
+      let item=document.createElement('div'); item.className='book-item'; item.innerText=`${libro.titolo} - ${libro.autore}`;
+      let detail=document.createElement('div'); detail.className='book-detail';
+      detail.innerHTML=`<img src='${libro.copertina}' class='cover'><p>${libro.descrizione||'Nessuna descrizione'}</p><p>Valutazione: ${'⭐'.repeat(libro.valutazione)}</p><p>Periodo: ${libro.dataInizio} - ${libro.dataFine}</p>`;
+      item.onclick=function(){
+        if(dettaglioAperto && dettaglioAperto!==detail) dettaglioAperto.classList.remove('open');
+        detail.classList.toggle('open');
+        dettaglioAperto=detail.classList.contains('open')?detail:null;
+      };
+      lista.appendChild(item); lista.appendChild(detail);
+    });
+  } else if(vistaCorrente==='autore'){
+    let autori={};
+    books.forEach(b=>{ if(!autori[b.autore]) autori[b.autore]=[]; autori[b.autore].push(b); });
+    Object.keys(autori).sort().forEach(autore=>{
+      let header=document.createElement('div'); header.className='book-item'; header.innerText=autore;
+      let subList=document.createElement('div'); subList.className='hidden';
+      autori[autore].sort((a,b)=>a.titolo.localeCompare(b.titolo)).forEach(libro=>{
+        let subItem=document.createElement('div'); subItem.className='sub-book-item'; subItem.innerText=libro.titolo;
+        let detail=document.createElement('div'); detail.className='book-detail';
+        detail.innerHTML=`<img src='${libro.copertina}' class='cover'><p>${libro.descrizione||'Nessuna descrizione'}</p><p>Valutazione: ${'⭐'.repeat(libro.valutazione)}</p><p>Periodo: ${libro.dataInizio} - ${libro.dataFine}</p>`;
+        subItem.onclick=function(e){ e.stopPropagation(); if(dettaglioAperto && dettaglioAperto!==detail) dettaglioAperto.classList.remove('open'); detail.classList.toggle('open'); dettaglioAperto=detail.classList.contains('open')?detail:null; };
+        subList.appendChild(subItem); subList.appendChild(detail);
+      });
+      header.onclick=function(){ subList.classList.toggle('hidden'); };
+      lista.appendChild(header); lista.appendChild(subList);
+    });
+  }
+}
+
+function impostaVista(v){ vistaCorrente=v; caricaLibri(); }
+
+function caricaAllBooksTutti(){
+  let users=JSON.parse(localStorage.getItem('users'))||{};
+  let allBooks=[];
+  Object.values(users).forEach(userObj=>{ userObj.books.forEach(book=>allBooks.push(book)); });
+  allBooks.sort((a,b)=>a.autore.localeCompare(b.autore));
+  let container=document.getElementById('usersBooksList');
+  container.innerHTML='';
+  allBooks.forEach(libro=>{
+    let item=document.createElement('div'); item.className='book-item'; item.innerText=`${libro.autore} - ${libro.titolo}`;
+    let detail=document.createElement('div'); detail.className='book-detail'; detail.innerHTML=`<p>${libro.descrizione||'Nessuna descrizione'}</p><p>Valutazione: ${'⭐'.repeat(libro.valutazione)}</p>`;
+    item.onclick=function(){ if(dettaglioAperto && dettaglioAperto!==detail) dettaglioAperto.classList.remove('open'); detail.classList.toggle('open'); dettaglioAperto=detail.classList.contains('open')?detail:null; };
+    container.appendChild(item); container.appendChild(detail);
+  });
+}
+</script>
+</body>
+</html>
