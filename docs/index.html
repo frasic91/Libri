@@ -67,8 +67,8 @@ button{cursor:pointer;}
 </select>
 <textarea id="recensione" placeholder="Recensione"></textarea>
 <input type="text" id="copertina" placeholder="URL Copertina (opzionale)">
-<button type="button" class="secondary" onclick="suggerisciLibro()">Suggerisci copertina e trama</button>
-<button type="button" class="primary" onclick="aggiungiOAggiornaLibro()">Salva</button>
+<button type="button" class="secondary" id="btnSuggerisci">Suggerisci copertina e trama</button>
+<button type="button" class="primary" id="btnSalva">Salva</button>
 <button type="button" onclick="tornaHome()">Annulla</button>
 </div>
 <div id="allUsersSection" class="hidden">
@@ -147,6 +147,7 @@ async function suggerisciLibro(){
       const book = data.docs[0];
       document.getElementById('copertina').value = book.cover_i ? `https://covers.openlibrary.org/b/id/${book.cover_i}-L.jpg` : '';
       document.getElementById('recensione').value = book.first_sentence ? (Array.isArray(book.first_sentence)?book.first_sentence[0]:book.first_sentence) : '';
+      alert('Suggerimento copertina e trama applicato!');
     } else { alert('Nessun suggerimento trovato'); }
   } catch(err){ alert('Errore nel recupero dati API: ' + err.message); }
 }
@@ -196,8 +197,21 @@ async function aggiungiOAggiornaLibro(){
     copertina: document.getElementById('copertina').value || '',
     id: id
   };
+
   await setDoc(doc(db, 'users', currentUser.uid, 'books', id), libro);
-  alert('Libro salvato'); tornaHome();
+  alert('✅ Libro salvato con successo!');
+
+  // Mostra la scheda del libro appena salvato
+  const lista = document.getElementById('listaLibri'); lista.innerHTML='';
+  const div = document.createElement('div'); div.className='book-item';
+  div.innerText = `${libro.titolo} - ${libro.autore}`;
+  const detail = document.createElement('div'); detail.className='book-detail open';
+  detail.innerHTML = `<p>${libro.recensione}</p><p>Valutazione: ${'⭐'.repeat(libro.valutazione)}</p><p>Periodo: ${libro.dataInizio} - ${libro.dataFine}</p>${libro.copertina?`<img src='${libro.copertina}' class='cover'>`:''}<br><button type='button' class='danger' onclick='eliminaLibro("${libro.id}")'>Elimina</button>`;
+  lista.appendChild(div); lista.appendChild(detail);
+
+  document.getElementById('aggiungiSection').classList.add('hidden');
+  document.getElementById('listaSection').classList.remove('hidden');
+  calcolaLibriPerAnno();
 }
 
 async function caricaLibri(){
@@ -230,7 +244,7 @@ async function caricaAllBooksTutti(){
   }
 }
 
-// Esportazioni per i pulsanti
+// Esportazioni
 window.login = login;
 window.register = register;
 window.logout = logout;
@@ -243,6 +257,10 @@ window.vaiAAggiungi = vaiAAggiungi;
 window.vaiAAllUsers = vaiAAllUsers;
 window.tornaHome = tornaHome;
 window.aggiornaObiettivo = aggiornaObiettivo;
+
+// Collego pulsanti anche via JS per sicurezza
+document.getElementById('btnSuggerisci').onclick = suggerisciLibro;
+document.getElementById('btnSalva').onclick = aggiungiOAggiornaLibro;
 </script>
 </body>
 </html>
