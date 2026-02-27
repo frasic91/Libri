@@ -17,6 +17,8 @@ button{cursor:pointer;}
 .book-detail{overflow:hidden;max-height:0;transition:max-height 0.4s ease;background:#3a3a55;border-radius:8px;padding:0 10px;}
 .book-detail.open{padding:10px;max-height:2000px;}
 .cover{max-width:100%;margin-top:10px;}
+.progress-bar{background:#555;border-radius:6px;overflow:hidden;margin:6px 0;}
+.progress-fill{background:#4CAF50;height:20px;width:0%;text-align:center;line-height:20px;color:white;}
 </style>
 </head>
 <body>
@@ -26,20 +28,28 @@ button{cursor:pointer;}
 <h2>Login / Registrazione</h2>
 <input type="email" id="email" placeholder="Email">
 <input type="password" id="password" placeholder="Password">
-<button class="primary" onclick="login()">Accedi</button>
-<button class="secondary" onclick="register()">Registrati</button>
+<button type="button" class="primary" onclick="login()">Accedi</button>
+<button type="button" class="secondary" onclick="register()">Registrati</button>
+<button type="button" class="secondary" onclick="recuperaPassword()">Recupera Password</button>
 </div>
 <div id="homeSection" class="hidden">
 <h2>Benvenuto <span id="displayUser"></span></h2>
-<button class="primary" onclick="vaiALista()">📖 Elenco Libri Personali</button>
-<button class="secondary" onclick="vaiAAggiungi()">➕ Aggiungi Libro</button>
-<button class="secondary" onclick="vaiAAllUsers()">📚 Elenco Libri di Tutti</button>
-<button class="danger" onclick="logout()">Logout</button>
+<div>
+<label for="obiettivoLibri">Obiettivo libri anno corrente:</label>
+<input type="number" id="obiettivoLibri" placeholder="Numero libri obiettivo">
+<button type="button" class="primary" onclick="aggiornaObiettivo()">Aggiorna obiettivo</button>
+</div>
+<div id="progressContainer" class="progress-bar hidden"><div id="progressFill" class="progress-fill">0%</div></div>
+<div id="numeroLibriPerAnno"></div>
+<button type="button" class="primary" onclick="vaiALista()">📖 Elenco Libri Personali</button>
+<button type="button" class="secondary" onclick="vaiAAggiungi()">➕ Aggiungi Libro</button>
+<button type="button" class="secondary" onclick="vaiAAllUsers()">📚 Elenco Libri di Tutti</button>
+<button type="button" class="danger" onclick="logout()">Logout</button>
 </div>
 <div id="listaSection" class="hidden">
 <h2>Elenco Libri Personali</h2>
 <div id="listaLibri"></div>
-<button onclick="tornaHome()">⬅ Torna Home</button>
+<button type="button" onclick="tornaHome()">⬅ Torna Home</button>
 </div>
 <div id="aggiungiSection" class="hidden">
 <h2>Aggiungi / Modifica Libro</h2>
@@ -57,18 +67,19 @@ button{cursor:pointer;}
 </select>
 <textarea id="recensione" placeholder="Recensione"></textarea>
 <input type="text" id="copertina" placeholder="URL Copertina (opzionale)">
-<button class="primary" onclick="aggiungiOAggiornaLibro()">Salva</button>
-<button onclick="tornaHome()">Annulla</button>
+<button type="button" class="secondary" onclick="suggerisciLibro()">Suggerisci copertina e trama</button>
+<button type="button" class="primary" onclick="aggiungiOAggiornaLibro()">Salva</button>
+<button type="button" onclick="tornaHome()">Annulla</button>
 </div>
 <div id="allUsersSection" class="hidden">
 <h2>Elenco Libri di Tutti</h2>
 <div id="usersBooksList"></div>
-<button onclick="tornaHome()">⬅ Torna Home</button>
+<button type="button" onclick="tornaHome()">⬅ Torna Home</button>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -85,43 +96,93 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 let currentUser = null;
+let obiettivoAnnuale = 0;
 
 async function register(){
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  try {
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  if(!emailInput || !passwordInput){ alert('Non trovo gli input email/password!'); return; }
+  const email = emailInput.value;
+  const password = passwordInput.value;
+  if(!email){ alert('Inserisci un email valida'); return; }
+  if(!password){ alert('Inserisci una password valida'); return; }
+  try{
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     currentUser = cred.user;
     mostraHome();
-  } catch(err){ alert(err.message); }
+  } catch(err){ alert(`Errore: ${err.code} - ${err.message}`); }
 }
 
 async function login(){
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  try {
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  if(!emailInput || !passwordInput){ alert('Non trovo gli input email/password!'); return; }
+  const email = emailInput.value;
+  const password = passwordInput.value;
+  if(!email){ alert('Inserisci un email valida'); return; }
+  if(!password){ alert('Inserisci una password valida'); return; }
+  try{
     const cred = await signInWithEmailAndPassword(auth, email, password);
     currentUser = cred.user;
     mostraHome();
-  } catch(err){ alert(err.message); }
+  } catch(err){ alert(`Errore: ${err.code} - ${err.message}`); }
 }
 
-async function logout(){
-  await signOut(auth);
-  currentUser=null;
-  location.reload();
+async function recuperaPassword(){
+  const email = document.getElementById('email').value;
+  if(!email){ alert('Inserisci la tua email per il recupero'); return; }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    alert('Email di recupero inviata! Controlla la tua posta.');
+  } catch(err){ alert(`Errore: ${err.code} - ${err.message}`); }
 }
+
+async function suggerisciLibro(){
+  const titolo = document.getElementById('titolo').value;
+  if(!titolo){ alert('Inserisci il titolo per il suggerimento'); return; }
+  try {
+    const res = await fetch(`https://openlibrary.org/search.json?title=${encodeURIComponent(titolo)}`);
+    const data = await res.json();
+    if(data.docs && data.docs.length > 0){
+      const book = data.docs[0];
+      document.getElementById('copertina').value = book.cover_i ? `https://covers.openlibrary.org/b/id/${book.cover_i}-L.jpg` : '';
+      document.getElementById('recensione').value = book.first_sentence ? (Array.isArray(book.first_sentence)?book.first_sentence[0]:book.first_sentence) : '';
+    } else { alert('Nessun suggerimento trovato'); }
+  } catch(err){ alert('Errore nel recupero dati API: ' + err.message); }
+}
+
+async function logout(){ await signOut(auth); currentUser=null; location.reload(); }
 
 function mostraHome(){
   document.getElementById('authSection').classList.add('hidden');
   document.getElementById('homeSection').classList.remove('hidden');
   document.getElementById('displayUser').innerText=currentUser.email;
+  calcolaLibriPerAnno();
 }
 
 function vaiALista(){ document.getElementById('homeSection').classList.add('hidden'); document.getElementById('listaSection').classList.remove('hidden'); caricaLibri(); }
 function vaiAAggiungi(){ document.getElementById('homeSection').classList.add('hidden'); document.getElementById('aggiungiSection').classList.remove('hidden'); document.getElementById('editId').value=''; }
 function vaiAAllUsers(){ document.getElementById('homeSection').classList.add('hidden'); document.getElementById('allUsersSection').classList.remove('hidden'); caricaAllBooksTutti(); }
 function tornaHome(){ document.getElementById('listaSection').classList.add('hidden'); document.getElementById('aggiungiSection').classList.add('hidden'); document.getElementById('allUsersSection').classList.add('hidden'); mostraHome(); }
+
+function aggiornaObiettivo(){ obiettivoAnnuale = parseInt(document.getElementById('obiettivoLibri').value) || 0; calcolaLibriPerAnno(); }
+
+async function calcolaLibriPerAnno(){
+  if(!currentUser) return;
+  const snapshot = await getDocs(collection(db, 'users', currentUser.uid, 'books'));
+  const libri = snapshot.docs.map(d=>d.data());
+  const countPerAnno = {};
+  const today = new Date();
+  libri.forEach(l=>{
+    if(l.dataInizio){ const anno = new Date(l.dataInizio).getFullYear(); countPerAnno[anno] = (countPerAnno[anno] || 0) + 1; }
+  });
+  const container = document.getElementById('numeroLibriPerAnno');
+  container.innerHTML = '<h3>Libri letti per anno</h3>';
+  for(const anno of Object.keys(countPerAnno).sort()){ container.innerHTML += `<p>${anno}: ${countPerAnno[anno]} libri</p>`; }
+  const currentYear = today.getFullYear();
+  const letti = countPerAnno[currentYear] || 0;
+  if(obiettivoAnnuale>0){ const perc = Math.min(100, Math.round((letti/obiettivoAnnuale)*100)); const progress = document.getElementById('progressContainer'); const fill = document.getElementById('progressFill'); progress.classList.remove('hidden'); fill.style.width = perc + '%'; fill.innerText = perc + '%'; }
+}
 
 async function aggiungiOAggiornaLibro(){
   const id = document.getElementById('editId').value || Date.now().toString();
@@ -147,17 +208,13 @@ async function caricaLibri(){
     const div = document.createElement('div'); div.className='book-item';
     div.innerText = `${libro.titolo} - ${libro.autore}`;
     const detail = document.createElement('div'); detail.className='book-detail';
-    detail.innerHTML = `<p>${libro.recensione}</p><p>Valutazione: ${'⭐'.repeat(libro.valutazione)}</p><p>Periodo: ${libro.dataInizio} - ${libro.dataFine}</p>${libro.copertina?`<img src='${libro.copertina}' class='cover'>`:''}<br><button class='danger' onclick='eliminaLibro("${libro.id}")'>Elimina</button>`;
+    detail.innerHTML = `<p>${libro.recensione}</p><p>Valutazione: ${'⭐'.repeat(libro.valutazione)}</p><p>Periodo: ${libro.dataInizio} - ${libro.dataFine}</p>${libro.copertina?`<img src='${libro.copertina}' class='cover'>`:''}<br><button type='button' class='danger' onclick='eliminaLibro("${libro.id}")'>Elimina</button>`;
     div.onclick=()=>{detail.classList.toggle('open');};
     lista.appendChild(div); lista.appendChild(detail);
   });
 }
 
-async function eliminaLibro(id){
-  if(!confirm('Vuoi eliminare questo libro?')) return;
-  await deleteDoc(doc(db, 'users', currentUser.uid, 'books', id));
-  caricaLibri();
-}
+async function eliminaLibro(id){ if(!confirm('Vuoi eliminare questo libro?')) return; await deleteDoc(doc(db, 'users', currentUser.uid, 'books', id)); caricaLibri(); calcolaLibriPerAnno(); }
 
 async function caricaAllBooksTutti(){
   const container = document.getElementById('usersBooksList'); container.innerHTML='';
@@ -173,16 +230,19 @@ async function caricaAllBooksTutti(){
   }
 }
 
-// Esporre le funzioni al contesto globale per i pulsanti HTML
+// Esportazioni per i pulsanti
 window.login = login;
 window.register = register;
 window.logout = logout;
+window.recuperaPassword = recuperaPassword;
+window.suggerisciLibro = suggerisciLibro;
 window.aggiungiOAggiornaLibro = aggiungiOAggiornaLibro;
 window.eliminaLibro = eliminaLibro;
 window.vaiALista = vaiALista;
 window.vaiAAggiungi = vaiAAggiungi;
 window.vaiAAllUsers = vaiAAllUsers;
 window.tornaHome = tornaHome;
+window.aggiornaObiettivo = aggiornaObiettivo;
 </script>
 </body>
 </html>
