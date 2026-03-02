@@ -11,6 +11,8 @@
 body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg,#667eea,#764ba2); min-height:100vh; display:flex; justify-content:center; align-items:flex-start; padding:20px;}
 .glass-card { backdrop-filter: blur(15px); background: rgba(255,255,255,0.15); border-radius: 20px; padding:20px; color:white; box-shadow:0 8px 32px rgba(0,0,0,0.3);}
 input, select, textarea { background: rgba(255,255,255,0.2) !important; border:none !important; color:white !important;}
+select { color:white !important; }
+select option { background: rgba(0,0,0,0.8); color:white !important;}
 input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.7);}
 textarea { resize:none; height:80px; }
 .btn-custom { border-radius:30px; font-weight:600; margin-top:5px;}
@@ -94,32 +96,8 @@ textarea { resize:none; height:80px; }
   </div>
 </div>
 
-<!-- MODALE DETTAGLIO LIBRO -->
-<div class="modal fade" id="bookDetailModal" tabindex="-1" aria-labelledby="bookDetailLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content text-dark">
-      <div class="modal-header">
-        <h5 class="modal-title" id="bookDetailLabel">Dettaglio Libro</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
-      </div>
-      <div class="modal-body">
-        <div class="text-center mb-3">
-          <img id="detailCover" src="" alt="Copertina" class="img-fluid rounded">
-        </div>
-        <h4 id="detailTitle" class="fw-bold"></h4>
-        <p id="detailAuthor" class="fst-italic"></p>
-        <p id="detailDescription"></p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module">
-// --- FIREBASE ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -136,7 +114,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- DOM ---
 const authCard=document.getElementById("authCard");
 const dashboard=document.getElementById("dashboard");
 const addBookCard=document.getElementById("addBookCard");
@@ -145,7 +122,8 @@ const welcomeName=document.getElementById("welcomeName");
 const bookResults=document.getElementById("bookResults");
 const bookInfoDiv=document.getElementById("bookInfo");
 
-// --- GLOBAL FUNCTIONS ---
+let books = { "to-read":[], "reading":[], "read":[] };
+
 window.emailVal = ()=>document.getElementById("email").value;
 window.passVal = ()=>document.getElementById("password").value;
 
@@ -180,37 +158,7 @@ window.logout = async function(){
     <div class="column" id="read"><h5>✅ LettI</h5></div>`;
 };
 
-// --- GOOGLE BOOKS SEARCH ---
-window.manualISBN = async function() {
-  const isbn = document.getElementById("manualISBN_add").value.trim();
-  if(!isbn) { alert("Inserisci un ISBN"); return; }
-  try{
-    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
-    const data = await res.json();
-    if(data.totalItems===0) { alert("Nessun libro trovato"); return; }
-    fillBookInfo(data.items[0].volumeInfo);
-  } catch(e){ console.error(e); alert("Errore nella ricerca ISBN"); }
-};
-
-window.searchTitleAuthor = async function() {
-  const query = document.getElementById("titleAuthorSearch_add").value.trim();
-  if(!query){ alert("Inserisci titolo o autore"); return; }
-  try{
-    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
-    const data = await res.json();
-    bookResults.innerHTML="";
-    if(data.totalItems===0){ bookResults.innerHTML="<p>Nessun risultato</p>"; return; }
-    data.items.forEach(item=>{
-      const info = item.volumeInfo;
-      const btn = document.createElement("button");
-      btn.className="btn btn-outline-light mb-1 w-100";
-      btn.textContent = info.title + " – " + (info.authors ? info.authors.join(", ") : "Autore sconosciuto");
-      btn.onclick = ()=>fillBookInfo(info);
-      bookResults.appendChild(btn);
-    });
-  } catch(e){ console.error(e); alert("Errore nella ricerca"); }
-};
-
+// Funzioni libri
 function fillBookInfo(book){
   bookInfoDiv.classList.remove("d-none");
   document.getElementById("bookTitle").textContent = book.title || "";
@@ -219,22 +167,19 @@ function fillBookInfo(book){
   document.getElementById("bookCover").value = book.imageLinks?.thumbnail || "";
 }
 
-// --- AUTH STATE & DOM EVENTS ---
-onAuthStateChanged(auth, user=>{
-  if(user){
-    welcomeName.textContent = "Benvenuto/a!";
-    authCard.classList.add("d-none");
-    dashboard.classList.remove("d-none");
-    bookColumns.classList.remove("d-none");
-  } else{
-    authCard.classList.remove("d-none");
-    dashboard.classList.add("d-none");
-    bookColumns.classList.add("d-none");
-  }
-});
+function addBookToColumn(category, book){
+  const col = document.getElementById(category);
+  const div = document.createElement("div");
+  div.className="book-item";
+  div.draggable=true;
+  div.innerHTML = `<span>${book.title} – ${book.authors}</span>
+                   <button class="btn btn-sm btn-danger">❌</button>`;
+  div.querySelector("button").onclick = ()=>{ div.remove(); books[category]=books[category].filter(b=>b!==book);}
+  col.appendChild(div);
+  books[category].push(book);
+}
 
 document.addEventListener('DOMContentLoaded', ()=>{
-  // Tab login/register
   document.getElementById("loginTab").addEventListener('click', ()=>{
     document.getElementById("nome").classList.add("d-none");
     document.getElementById("genere").classList.add("d-none");
@@ -256,8 +201,42 @@ document.addEventListener('DOMContentLoaded', ()=>{
     addBookCard.classList.add('d-none');
     dashboard.classList.remove('d-none');
   });
-  document.getElementById("manualBtn").addEventListener('click', window.manualISBN);
-  document.getElementById("searchBtn").addEventListener('click', window.searchTitleAuthor);
+  document.getElementById("manualBtn").addEventListener('click', async()=>{
+    const isbn=document.getElementById("manualISBN_add").value.trim();
+    if(!isbn) return alert("Inserisci ISBN");
+    const res=await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+    const data = await res.json();
+    if(!data.items) return alert("Nessun libro trovato");
+    fillBookInfo(data.items[0].volumeInfo);
+  });
+  document.getElementById("searchBtn").addEventListener('click', async()=>{
+    const query=document.getElementById("titleAuthorSearch_add").value.trim();
+    if(!query) return alert("Inserisci titolo o autore");
+    const res=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    bookResults.innerHTML="";
+    if(!data.items){ bookResults.innerHTML="Nessun risultato"; return;}
+    data.items.forEach(item=>{
+      const info=item.volumeInfo;
+      const btn=document.createElement("button");
+      btn.className="btn btn-outline-light mb-1 w-100";
+      btn.textContent= info.title + " – " + (info.authors?info.authors.join(", "):"Autore sconosciuto");
+      btn.onclick=()=>fillBookInfo(info);
+      bookResults.appendChild(btn);
+    });
+  });
+  document.getElementById("saveBookBtn").addEventListener('click', ()=>{
+    const category=document.getElementById("bookCategory").value;
+    if(!category) return alert("Seleziona lista");
+    const book={
+      title:document.getElementById("bookTitle").textContent,
+      authors:document.getElementById("bookAuthor").textContent,
+      description:document.getElementById("bookDescription").value,
+      cover:document.getElementById("bookCover").value
+    };
+    addBookToColumn(category,book);
+    alert("Libro aggiunto!");
+  });
   document.getElementById("logoutBtn").addEventListener('click', window.logout);
 });
 
