@@ -136,12 +136,14 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// DOM
+// --- DOM ---
 const authCard=document.getElementById("authCard");
 const dashboard=document.getElementById("dashboard");
 const addBookCard=document.getElementById("addBookCard");
 const bookColumns=document.getElementById("bookColumns");
 const welcomeName=document.getElementById("welcomeName");
+const bookResults=document.getElementById("bookResults");
+const bookInfoDiv=document.getElementById("bookInfo");
 
 // --- GLOBAL FUNCTIONS ---
 window.emailVal = ()=>document.getElementById("email").value;
@@ -178,8 +180,47 @@ window.logout = async function(){
     <div class="column" id="read"><h5>✅ LettI</h5></div>`;
 };
 
-// --- AUTH STATE ---
-onAuthStateChanged(auth, async user=>{
+// --- GOOGLE BOOKS SEARCH ---
+window.manualISBN = async function() {
+  const isbn = document.getElementById("manualISBN_add").value.trim();
+  if(!isbn) { alert("Inserisci un ISBN"); return; }
+  try{
+    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+    const data = await res.json();
+    if(data.totalItems===0) { alert("Nessun libro trovato"); return; }
+    fillBookInfo(data.items[0].volumeInfo);
+  } catch(e){ console.error(e); alert("Errore nella ricerca ISBN"); }
+};
+
+window.searchTitleAuthor = async function() {
+  const query = document.getElementById("titleAuthorSearch_add").value.trim();
+  if(!query){ alert("Inserisci titolo o autore"); return; }
+  try{
+    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    bookResults.innerHTML="";
+    if(data.totalItems===0){ bookResults.innerHTML="<p>Nessun risultato</p>"; return; }
+    data.items.forEach(item=>{
+      const info = item.volumeInfo;
+      const btn = document.createElement("button");
+      btn.className="btn btn-outline-light mb-1 w-100";
+      btn.textContent = info.title + " – " + (info.authors ? info.authors.join(", ") : "Autore sconosciuto");
+      btn.onclick = ()=>fillBookInfo(info);
+      bookResults.appendChild(btn);
+    });
+  } catch(e){ console.error(e); alert("Errore nella ricerca"); }
+};
+
+function fillBookInfo(book){
+  bookInfoDiv.classList.remove("d-none");
+  document.getElementById("bookTitle").textContent = book.title || "";
+  document.getElementById("bookAuthor").textContent = book.authors ? book.authors.join(", ") : "";
+  document.getElementById("bookDescription").value = book.description || "";
+  document.getElementById("bookCover").value = book.imageLinks?.thumbnail || "";
+}
+
+// --- AUTH STATE & DOM EVENTS ---
+onAuthStateChanged(auth, user=>{
   if(user){
     welcomeName.textContent = "Benvenuto/a!";
     authCard.classList.add("d-none");
@@ -192,7 +233,6 @@ onAuthStateChanged(auth, async user=>{
   }
 });
 
-// --- DOM READY ---
 document.addEventListener('DOMContentLoaded', ()=>{
   // Tab login/register
   document.getElementById("loginTab").addEventListener('click', ()=>{
@@ -207,7 +247,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     document.getElementById("mainButton").textContent="Registrati";
     document.getElementById("mainButton").onclick = window.register;
   });
-
   document.getElementById("forgotPassword").addEventListener('click', window.resetPassword);
   document.getElementById("addBookBtn").addEventListener('click', ()=>{
     dashboard.classList.add('d-none');
@@ -217,8 +256,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
     addBookCard.classList.add('d-none');
     dashboard.classList.remove('d-none');
   });
-
-  // Qui puoi aggiungere anche addEventListener per scannerBtn, manualBtn, searchBtn, saveBookBtn
+  document.getElementById("manualBtn").addEventListener('click', window.manualISBN);
+  document.getElementById("searchBtn").addEventListener('click', window.searchTitleAuthor);
+  document.getElementById("logoutBtn").addEventListener('click', window.logout);
 });
 
 </script>
